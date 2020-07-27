@@ -569,6 +569,9 @@ class Scanner(object):
                     f"{self.revisit}.")
             timestamps.append(datetime.now())
             scans.append(self.__service.scan(self.revisit))
+            self.__logger.info(str(self.__service.scan(self.revisit)))
+            #if str(self.__service.scan(self.revisit))!="{}":
+               # self.__logger.info(str(self.__service.scan(self.revisit))[-4:-3])
             # Stop advertising based on either timeout or control file
             if timeout is not None:
                 if (time.monotonic()-start_time) > timeout:
@@ -676,9 +679,8 @@ def parse_args(args):
             help="Beacon advertiser minor value.")
     parser.add_argument('--tx_power', type=int, 
             help="Beacon advertiser TX power.")
-    parser.add_argument('--interval', type=int,
-            help="Beacon advertiser interval (ms).")
-    parser.add_argument('--revisit', type=int, 
+    parser.add_argument('--interval', type=int, help="Beacon advertiser interval (ms).")
+    parser.add_argument('--revist', type=int, 
             help="Beacon scanner revisit interval (s)")
     return vars(parser.parse_args(args))
     
