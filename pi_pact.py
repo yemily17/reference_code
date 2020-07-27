@@ -7,7 +7,8 @@ Configuration of beacon done via external YAML. Underlying functionality
 provided by PyBluez module (https://github.com/pybluez/pybluez). Beacon 
 uses iBeacon format (https://en.wikipedia.org/wiki/IBeacon).
 """
-
+import pygame
+from pygame import mixer
 import argparse
 from bluetooth.ble import BeaconService
 from datetime import datetime
@@ -488,7 +489,7 @@ class Scanner(object):
         for key, value in self.filters.items():
             # Filter based on fixed identifiers
             if key in ID_FILTERS:
-                advertisements = advertisements[advertisements[key].isin([value])]
+                advertisements = advertisements[advertisements[key].isin(value)]
             # Filter based on measurements
             else:
                 query_str = f"{value[0]} <= {key} and {key} <= {value[1]}"
@@ -563,15 +564,23 @@ class Scanner(object):
         scans = []
         scan_count = 0
         start_time = time.monotonic()
+        #pygame.mixer.pre_init(44100, 16, 2, 4096)
+        pygame.init()
+        pygame.mixer.music.load("beep-02.wav")
         while run:
             scan_count += 1
             self.__logger.debug(f"Performing scan #{scan_count} at revisit "
                     f"{self.revisit}.")
             timestamps.append(datetime.now())
             scans.append(self.__service.scan(self.revisit))
-            self.__logger.info(str(self.__service.scan(self.revisit)))
-            #if str(self.__service.scan(self.revisit))!="{}":
-               # self.__logger.info(str(self.__service.scan(self.revisit))[-4:-3])
+            #self.__logger.info(self.__service.scan(self.revisit))
+            #if(str(self.__service.scan(self.revisit))!="{}"):
+            self.__logger.info(self.__service.scan(self.revisit))
+            if str(self.__service.scan(self.revisit))!="{}" and str(self.__service.scan(self.revisit))!="":
+                if int(str(self.__service.scan(self.revisit))[-5:-2])>-50:
+                    pygame.mixer.music.play()
+                    #while pygame.mixer.music.get_busy() == True:
+                        #continue
             # Stop advertising based on either timeout or control file
             if timeout is not None:
                 if (time.monotonic()-start_time) > timeout:
@@ -638,9 +647,7 @@ def load_config(parsed_args):
     if config['scanner']['filters'] is not None:
         filters_to_remove = []
         for key, value in config['scanner']['filters'].items():
-            if key not in ALLOWABLE_FILTERS:
-                filters_to_remove.append(key)
-            elif value is None:
+            if key not in ALLOWABLE_FILTERS or not isinstance(value, list):
                 filters_to_remove.append(key)
             elif key in MEASUREMENT_FILTERS and len(value) != 2:
                 filters_to_remove.append(key)
